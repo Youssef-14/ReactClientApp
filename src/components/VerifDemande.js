@@ -1,15 +1,20 @@
 import React, {Component} from "react";
 import axios from "axios";
+import {Stack} from "@mui/material";
+import Pagination from '@mui/material/Pagination';
 
 export class VerifDemande extends Component {
+
+    filterElement = React.createRef();
     state = {
         data: [],
         showPopup: false,
         showPopup2: false,
         demande: null,
         types: ['all'],
-        status:['all','accepted','refused','be-corrected','encours'],
-        filter:'all',
+        status:['all','accepté','refusé','encours','àcorriger'],
+        filter_type:'all',
+        filter_status:'all',
         pagination: {
             page: 1,
             limit: 5,
@@ -31,15 +36,39 @@ export class VerifDemande extends Component {
         this.fetchData();
     }
 
+    handlePaginationNumberChange(e,page) {
+        this.setState({pagination:{limit:this.state.pagination.limit,page,pages: this.state.pagination.pages}}, () => {
+            this.fetchData();
+        });
+    }
+
+    handlePaginationChange(e) {
+        this.setState({pagination:{limit:e.target.value,page:1,pages: Math.ceil( this.state.data.length/e.target.value)}}, () => {
+            this.fetchData();
+        });
+    }
+
+    handleFilterStatusChange(e) {
+        this.setState({ filter_status: e.target.value }, () => {
+            this.fetchData();
+        });
+    }
+    handleFilterTypeChange(e) {
+        this.setState({ filter_type: e.target.value }, () => {
+            this.fetchData();
+        });
+    }
+
     fetchData = () => {
+        const min = (this.state.pagination.page - 1) * this.state.pagination.limit;
+        const max = this.state.pagination.page * this.state.pagination.limit;
+        console.log(max+" "+min);
         axios
-            .get('https://localhost:7095/get-all-demandes')
+            .get("https://localhost:7095/get-filtered-demands/"+this.state.filter_type+"/"+this.state.filter_status+"/"+min+"/"+max)
             .then(response => {
                 const data = response.data;
                 this.setState({ data });
-                /*
                 this.setState({ pagination: {page: this.state.pagination.page,limit: this.state.pagination.limit,pages :Math.ceil(data.length/this.state.pagination.limit)   } })
-                */
                 data.forEach((demande) => {
                     if(!this.state.types.includes(demande.type)){
                         this.state.types.push(demande.type);
@@ -50,6 +79,7 @@ export class VerifDemande extends Component {
                 console.error(error);
             });
     }
+
     updateDemand = (event,value) => {
         event.preventDefault();
         axios
@@ -62,9 +92,24 @@ export class VerifDemande extends Component {
                 console.error(error);
             });
     }
+    paginationNumberRender(){
+        let paginationNumbers = [];
+        for(let i = 1; i <= this.state.pagination.pages; i++){
+            paginationNumbers.push(i);
+        }
+        return(
+            paginationNumbers.map(page => (
+                <td key={page} className={'pa'} value={page} onClick={e =>this.handlePaginationNumberChange(e,page) }>
+                    <button>{page}</button>
+                </td>
+            ))
+        );
+    }
+
     demanadsrender() {
         return (
             <tbody>
+
             {
                 this.state.data.map(demande =>
                     <tr key={demande.id}>
@@ -112,39 +157,19 @@ export class VerifDemande extends Component {
     }
     render() {
         const { data } = this.state;
-        if (data.length === 0) {
-            return (
-                <div className="container main">
-                    <h1 className="text-center">No data</h1>
-                    <div>
-                        <table className='table table-striped' aria-labelledby="tabelLabel">
-                            <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Date</th>
-                                <th>Comment</th>
-                                <th>Status</th>
-                            </tr>
-                            </thead>
-                        </table>
-                        <button className="btn text-white bg-dark justify-content-right" onClick={this.openPopUp}>Add</button>
-                    </div>
-                </div>
-            );
-        }
 
         return (
             <div className={'main'}>
                 <div>
                     <h1>Filter</h1>
-                    Type de demande : <select id={'filter'} ref={this.filterElement} /*onChange={e => this.setState({filter:e.target.value})}*/>
+                    Type de demande : <select id={'filter'} ref={this.filterElement} onChange={e => this.handleFilterTypeChange(e)}>
                     {this.state.types.map(option => (
                         <option key={option} value={option}>
                             {option}
                         </option>
                     ))}
                     </select><br/>
-                    Status : <select id={'filter'} ref={this.filterElement} onChange={e => this.setState({filter:e.target.value})}>
+                    Status : <select id={'filter'} ref={this.filterElement} onChange={e => this.handleFilterStatusChange(e)}>
                     {this.state.status.map(option => (
                         <option key={option} value={option}>
                             {option}
@@ -170,20 +195,24 @@ export class VerifDemande extends Component {
                         <table className='table table-striped' aria-labelledby="tabelLabel">
                             <tbody>
                             <tr>
-                                <td>
-                                    <select id={'pagination'} defaultValue={5} onChange={e => this.setState({pagination:{limit:e.target.value,page:1,pages: Math.ceil( data.length/e.target.value)}})}>
+                                <td width={'10px'}>
+                                    <select id={'pagination'} defaultValue={5} onChange={e => this.handlePaginationChange(e)}>
                                         <option value="5">5</option>
                                         <option value="10">10</option>
                                         <option value="15">15</option>
                                         <option value="20">20</option>
                                     </select>
                                 </td>
-                                <td>
+                                <td align={'center'}>
                                     <table>
                                         <tbody>
+
                                         <tr>
+                                            <Stack spacing={2}>
+                                                <Pagination count={3} variant="outlined" shape="rounded" />
+                                            </Stack>
                                             {
-                                                //this.paginationNumberRender()
+                                                this.paginationNumberRender()
                                             }
                                         </tr>
                                         </tbody>

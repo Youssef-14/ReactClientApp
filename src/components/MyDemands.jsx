@@ -7,7 +7,7 @@ export class MyDemands extends Component {
         showPopup: false,
         showPopup2: false,
         demande: null,
-        departments: [],
+        types: [],
         filter: 'all',
         pagination: {
             page: 1,
@@ -39,19 +39,18 @@ export class MyDemands extends Component {
 
     fetchData = () => {
         axios
-            .get('https://localhost:7095/get-all-demandes-by-user/1')
+            .get('https://localhost:7095/get-all-demandes-by-user/3')
             .then(response => {
                 const data = response.data;
                 this.setState({ data });
-                /*
+
                 this.setState({ pagination: {page: this.state.pagination.page,limit: this.state.pagination.limit,pages :Math.ceil(data.length/this.state.pagination.limit)   } });
-                //this.state.departments = [];
                 data.forEach((employe) => {
-                    if(!this.state.departments.includes(employe.department)){
-                        this.state.departments.push(employe.department);
+                    if(!this.state.types.includes(employe.type)){
+                        this.state.types.push(employe.type);
                     }
                 });
-                */
+
             })
             .catch(error => {
                 console.error(error);
@@ -74,7 +73,7 @@ export class MyDemands extends Component {
                 type: type,
                 date: date,
                 comment : comment,
-                UserId: 1,
+                UserId: 3,
             }).then(() => {
             this.fetchData();
             this.closePopUp();
@@ -104,11 +103,11 @@ export class MyDemands extends Component {
                     <form className={'form'}>
                         <div className="form-group">
                             <label htmlFor="name">Type de Demande</label>
-                            <input type="text" className="form-control" name={'type'} id="name" placeholder="Enter name" />
+                            <input type="text" className="form-control" name={'type'} id="name" placeholder="Donner le type de demande" />
                         </div>
                         <div className="form-group">
                             <label htmlFor="email">Commentaires</label>
-                            <input type="text" className="form-control" name={'comment'} id="email" placeholder="Enter email" />
+                            <input type="text" className="form-control" name={'comment'} id="email" placeholder="Donner un commentaire" />
                         </div>
                         <button type="submit" className="btn text-white bg-dark btn-primary" onClick={this.addDemand}>Submit</button>
                     </form>
@@ -133,28 +132,22 @@ export class MyDemands extends Component {
                 ) }
             </tbody>);
     }
+    paginationNumberRender(){
+        let paginationNumbers = [];
+        for(let i = 1; i <= this.state.pagination.pages; i++){
+            paginationNumbers.push(i);
+        }
+        return(
+            paginationNumbers.map(page => (
+                <td key={page} className={'pa'} value={page} onClick={e =>this.handlePaginationNumberChange(e,page) }>
+                    <button>{page}</button>
+                </td>
+            ))
+        );
+    }
+
     render() {
         const { data } = this.state;
-        if (data.length === 0) {
-            return (
-                <div className="container main">
-                    <h1 className="text-center">No data</h1>
-                    <div>
-                        <table className='table table-striped' aria-labelledby="tabelLabel">
-                            <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Date</th>
-                                <th>Comment</th>
-                                <th>Status</th>
-                            </tr>
-                            </thead>
-                        </table>
-                        <button className="btn text-white bg-dark justify-content-right" onClick={this.openPopUp}>Add</button>
-                    </div>
-                </div>
-            );
-        }
 
         return (
             <div className={'main'}>
@@ -162,7 +155,7 @@ export class MyDemands extends Component {
                     <h1>Filter</h1>
                     Department : <select id={'filter'} ref={this.filterElement} onChange={e => this.setState({filter:e.target.value})}>
                     <option value="all">ALL</option>
-                    {this.state.departments.map(option => (
+                    {this.state.types.map(option => (
                         <option key={option} value={option}>
                             {option}
                         </option>
@@ -188,7 +181,7 @@ export class MyDemands extends Component {
                         <table className='table table-striped' aria-labelledby="tabelLabel">
                             <tbody>
                             <tr>
-                                <td>
+                                <td width={'10px'}>
                                     <select id={'pagination'} defaultValue={5} onChange={e => this.setState({pagination:{limit:e.target.value,page:1,pages: Math.ceil( data.length/e.target.value)}})}>
                                         <option value="5">5</option>
                                         <option value="10">10</option>
@@ -196,12 +189,12 @@ export class MyDemands extends Component {
                                         <option value="20">20</option>
                                     </select>
                                 </td>
-                                <td>
+                                <td align={'center'}>
                                     <table>
                                         <tbody>
                                         <tr>
                                             {
-                                                //this.paginationNumberRender()
+                                                this.paginationNumberRender()
                                             }
                                         </tr>
                                         </tbody>
