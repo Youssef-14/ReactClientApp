@@ -1,13 +1,14 @@
 import React, {Component} from "react";
 import axios from "axios";
-import {Stack} from "@mui/material";
-import Pagination from '@mui/material/Pagination';
+/*import {Stack} from "@mui/material";
+import Pagination from '@mui/material/Pagination';*/
 
 export class VerifDemande extends Component {
 
     filterElement = React.createRef();
     state = {
         data: [],
+        data_length: 0,
         showPopup: false,
         showPopup2: false,
         demande: null,
@@ -33,42 +34,58 @@ export class VerifDemande extends Component {
 
     // Lifecycle method
     componentDidMount() {
-        this.fetchData();
+        this.getDateLength();
     }
 
     handlePaginationNumberChange(e,page) {
         this.setState({pagination:{limit:this.state.pagination.limit,page,pages: this.state.pagination.pages}}, () => {
-            this.fetchData();
+            this.getDateLength();
         });
     }
 
     handlePaginationChange(e) {
-        this.setState({pagination:{limit:e.target.value,page:1,pages: Math.ceil( this.state.data.length/e.target.value)}}, () => {
-            this.fetchData();
+        this.setState({pagination:{limit:e.target.value,page:1,pages: Math.ceil( this.state.data_length/e.target.value)}}, () => {
+            this.getDateLength();
         });
     }
 
     handleFilterStatusChange(e) {
         this.setState({ filter_status: e.target.value }, () => {
-            this.fetchData();
+            this.setState({ pagination: {page: 1,limit: this.state.pagination.limit,pages :this.state.pagination.pages  } })
+            this.getDateLength();
         });
     }
     handleFilterTypeChange(e) {
         this.setState({ filter_type: e.target.value }, () => {
-            this.fetchData();
+            this.setState({ pagination: {page: 1,limit: this.state.pagination.limit,pages :this.state.pagination.pages  } })
+            this.getDateLength();
         });
+    }
+
+    getDateLength = () => {
+        axios
+            .get("https://localhost:7095/get-demandes-filtered-number/"+this.state.filter_type+"/"+this.state.filter_status)
+            .then(response => {
+                this.setState({ data_length: response.data })
+                console.log(this.state.data_length);
+                this.fetchData();
+            })
+            .catch(error => {
+                console.error(error);
+            });
     }
 
     fetchData = () => {
         const min = (this.state.pagination.page - 1) * this.state.pagination.limit;
-        const max = this.state.pagination.page * this.state.pagination.limit;
+        const max = this.state.pagination.limit;
         console.log(max+" "+min);
         axios
             .get("https://localhost:7095/get-filtered-demands/"+this.state.filter_type+"/"+this.state.filter_status+"/"+min+"/"+max)
             .then(response => {
                 const data = response.data;
-                this.setState({ data });
-                this.setState({ pagination: {page: this.state.pagination.page,limit: this.state.pagination.limit,pages :Math.ceil(data.length/this.state.pagination.limit)   } })
+                this.state.data=data;
+                console.log(this.state.data)
+                this.setState({ pagination: {page: this.state.pagination.page,limit: this.state.pagination.limit,pages :Math.ceil(this.state.data_length/this.state.pagination.limit)   } })
                 data.forEach((demande) => {
                     if(!this.state.types.includes(demande.type)){
                         this.state.types.push(demande.type);
@@ -85,6 +102,10 @@ export class VerifDemande extends Component {
         axios
             .put('https://localhost:7095/set-demande-to-'+value,this.state.demande)
             .then(response => {
+                if(this.state.pagination.page > 1){
+                    this.setState({ pagination: {page: this.state.pagination.page-1,limit: this.state.pagination.limit,pages :this.state.pagination.pages  } })
+                    this.setState({ pagination: {page: this.state.pagination.page,limit: this.state.pagination.limit,pages :this.state.pagination.pages-1  } })
+                }
                 this.fetchData();
                 this.closePopUp();
             })
@@ -208,9 +229,6 @@ export class VerifDemande extends Component {
                                         <tbody>
 
                                         <tr>
-                                            <Stack spacing={2}>
-                                                <Pagination count={3} variant="outlined" shape="rounded" />
-                                            </Stack>
                                             {
                                                 this.paginationNumberRender()
                                             }
