@@ -32,19 +32,18 @@ export class Register extends Component {
         const  password1 = form.elements.password1.value;
         const  password2 = form.elements.password2.value;
 
-        alert(name);
         if(password1 !== password2){
             alert("Passwords don't match");
             return ;
         }
         axios
-            .post('https://localhost:7095/create-user', {
+            .post('https://localhost:7095/User/create-user', {
                 name: name,
                 email: email,
                 cin: cin,
                 password: password1
-            }).then(() => {
-            alert("User created successfully");
+            }).then(response => {
+                alert(response.data);
             })
             .catch(error => {
                     console.error(error);

@@ -1,4 +1,5 @@
 import React from 'react';
+import { render ,Screen } from '@testing-library/react';
 import { createRoot } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import App from './App';
@@ -11,4 +12,10 @@ it('renders without crashing', async () => {
       <App />
     </MemoryRouter>);
   await new Promise(resolve => setTimeout(resolve, 1000));
+});
+
+test('renders learn react link', () => {
+  render(<App />);
+  const linkElement = Screen.getByText(/learn react/i);
+  expect(linkElement).toBeInTheDocument();
 });

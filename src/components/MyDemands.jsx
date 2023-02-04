@@ -36,10 +36,12 @@ export class MyDemands extends Component {
     closePopUp2 = () => {
         this.setState({ showPopup2: false });
     }
-
+    handlefile = (event) => {
+        this.setState({file: event.target.files[0]});
+    }
     fetchData = () => {
         axios
-            .get('https://localhost:7095/get-all-demandes-by-user/3')
+            .get('https://localhost:7095/get-all-demandes-by-user/1')
             .then(response => {
                 const data = response.data;
                 this.setState({ data });
@@ -56,25 +58,49 @@ export class MyDemands extends Component {
                 console.error(error);
             });
     }
-    //Ajouter un employé
+    //Ajouter une demande
     addDemand = (event) => {
         event.preventDefault();
 
         const {form} = event.target
-
         const type = form.elements.type.value;
         const comment = form.elements.comment.value;
+
+        let file = this.state.file;
+        const formData = new FormData();
+        formData.append('file', file);
+        axios({
+            method: 'post',
+            url: 'https://localhost:7095/uploads/you',
+            data: formData,
+            headers: {'Content-Type': 'multipart/form-data' },
+        })
+            .then(function (response) {
+                console.log(response);
+            }
+        );
+
+
         const mois = new Date().getMonth()+1;
         const month = mois<10 ?"0"+mois:mois;
-        const date = new Date().getFullYear()+"-"+month+"-"+ new Date().getDate() +"T"+new Date().toLocaleTimeString();
+        const jour = new Date().getDate();
+        const day = jour<10 ?"0"+jour:jour;
+        const date = new Date().getFullYear()+"-"+month+"-"+ day +"T"+new Date().toLocaleTimeString();
         console.log(date);
-        axios
-            .post('https://localhost:7095/create-demande', {
+        axios({
+            method: 'post',
+            url: 'https://localhost:7095/create-demande',
+                data: {
+                UserId: 1,
                 type: type,
                 date: date,
                 comment : comment,
-                UserId: 3,
-            }).then(() => {
+            },
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+        }).then(() => {
             this.fetchData();
             this.closePopUp();
         })
@@ -83,7 +109,7 @@ export class MyDemands extends Component {
                 }
             );
     }
-    //Supprimer un employé
+    //Supprimer un demande
     deleteDemand = (id) =>{
         axios
             .delete('https://localhost:7095/delete-demande-by-id/' + id)
@@ -108,6 +134,10 @@ export class MyDemands extends Component {
                         <div className="form-group">
                             <label htmlFor="email">Commentaires</label>
                             <input type="text" className="form-control" name={'comment'} id="email" placeholder="Donner un commentaire" />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="File">Ajouter ici les pdf</label>
+                            <input type="file" multiple className={'form-control'} id="customFile" onChange={(e)=>this.handlefile(e)} />
                         </div>
                         <button type="submit" className="btn text-white bg-dark btn-primary" onClick={this.addDemand}>Submit</button>
                     </form>

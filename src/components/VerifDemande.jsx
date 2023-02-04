@@ -20,12 +20,14 @@ export class VerifDemande extends Component {
             page: 1,
             limit: 5,
             pages : 1
-        }
+        },
+        files: []
     }
     // Method to open the pop-up
     openPopUp = (demande) => {
         this.setState({ showPopup: true });
         this.setState({ demande: demande });
+        this.getfilesnames();
     }
     // Method to close the pop-up
     closePopUp = () => {
@@ -67,24 +69,64 @@ export class VerifDemande extends Component {
             .get("https://localhost:7095/get-demandes-filtered-number/"+this.state.filter_type+"/"+this.state.filter_status)
             .then(response => {
                 this.setState({ data_length: response.data })
-                console.log(this.state.data_length);
                 this.fetchData();
             })
             .catch(error => {
                 console.error(error);
             });
     }
+    //get files
+    getfilesnames() {
+        axios
+            .get('https://localhost:7095/getallfiles/yo')
+            .then(response => {
+                this.setState({ files: response.data });
+            })
+            .catch(error => {
+                console.log(error);
+            });
+    }
+    deletefile(file) {
+        axios
+            .delete('https://localhost:7095/delete/yo/'+file)
+            .then(response => {
+                this.getfilesnames();
+            })
+            .catch(error => {
+                console.log(error);
+            });
+    }
+    getfile(file) {
+        axios({
+            method: 'get',
+            url: "https://localhost:7095/download/yo/"+file,
+            responseType: 'blob',
+            headers: {
+                'Content-Type': 'application/pdf'
+            }
+        })
+            .then((response) => {
+                const blob = new Blob([response.data], {
+                    type: 'application/pdf'
+                });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', file);
+                document.body.appendChild(link);
+                link.click();
+                link.parentNode.removeChild(link);
+            });
 
+    }
     fetchData = () => {
         const min = (this.state.pagination.page - 1) * this.state.pagination.limit;
         const max = this.state.pagination.limit;
-        console.log(max+" "+min);
         axios
             .get("https://localhost:7095/get-filtered-demands/"+this.state.filter_type+"/"+this.state.filter_status+"/"+min+"/"+max)
             .then(response => {
                 const data = response.data;
-                this.state.data=data;
-                console.log(this.state.data)
+                this.setState({ data: data })
                 this.setState({ pagination: {page: this.state.pagination.page,limit: this.state.pagination.limit,pages :Math.ceil(this.state.data_length/this.state.pagination.limit)   } })
                 data.forEach((demande) => {
                     if(!this.state.types.includes(demande.type)){
@@ -100,7 +142,7 @@ export class VerifDemande extends Component {
     updateDemand = (event,value) => {
         event.preventDefault();
         axios
-            .put('https://localhost:7095/set-demande-to-'+value,this.state.demande)
+            .put('https://localhost:7095/set-demande-to-'+value+"/"+this.state.demande.id)
             .then(response => {
                 if(this.state.pagination.page > 1){
                     this.setState({ pagination: {page: this.state.pagination.page-1,limit: this.state.pagination.limit,pages :this.state.pagination.pages  } })
@@ -153,24 +195,47 @@ export class VerifDemande extends Component {
                     <form className={'form2'}>
                         <div className="form-group">
                             <label htmlFor="name">Type</label>
-                            <input type="text" className="form-control" id="name" value={this.state.demande.type} placeholder="Enter name" />
+                            <input type="text" className="form-control" id="name" defaultValue={this.state.demande.type} placeholder="Enter name" />
                         </div>
                         <div className="form-group">
                             <label htmlFor="email">Date</label>
-                            <input type="text" className="form-control" id="email" value={this.state.demande.date} placeholder="Enter email" />
+                            <input type="text" className="form-control" id="email" defaultValue={this.state.demande.date} placeholder="Enter email" />
                         </div>
                         <div className="form-group">
                             <label htmlFor="email">Commentaire</label>
-                            <input type="text" className="form-control" id="email" value={this.state.demande.comment} placeholder="Enter email" />
+                            <input type="text" className="form-control" id="email" defaultValue={this.state.demande.comment} placeholder="Enter email" />
                         </div>
                         <div className="form-group">
                             <label htmlFor="email">status</label>
                             <input type="text" className="form-control" id="email" defaultValue={this.state.demande.status} placeholder="Enter email" />
                         </div>
+                        <table>
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Download</th>
+                            <th>Delete</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {this.state.files.map((file, index) => (
+                            <tr key={index}>
+                                <td>{file}</td>
+                                <td>
+                                    <button type="button" variant="primary" onClick={()=>this.getfile(file)}>View</button>{' '}
+                                </td>
+                                <td>
+                                    <button type="button" variant="primary" onClick={()=>this.deletefile(file)}>Delete</button>{' '}
+                                </td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
                         <hr/>
-                        <button  className="btn text-white bg-dark btn-primary" onClick={(event) => this.updateDemand(event,"accepted")}>Accepter</button>
-                        <button  className="btn text-white bg-dark btn-primary" onClick={(event) => this.updateDemand(event,"refused")}>Refuser</button>
-                        <button  className="btn text-white bg-dark btn-primary" onClick={(event) => this.updateDemand(event,"be-corrected")}>à corriger</button>
+
+                        <button  className="btn text-white bg-dark m-1" onClick={(event) => this.updateDemand(event,"accepted")}>Accepter</button>
+                        <button  className="btn text-white bg-dark m-1" onClick={(event) => this.updateDemand(event,"refused")}>Refuser</button>
+                        <button  className="btn text-white bg-dark m-1" onClick={(event) => this.updateDemand(event,"be-corrected")}>à corriger</button>
                     </form>
                 </div>
             </div>

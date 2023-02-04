@@ -31,15 +31,9 @@ export class Login extends Component {
         const email = form.elements.email.value;
         const password = form.elements.password.value;
         axios
-            .get("https://localhost:7095/get-user-by-email-and-password/"+email+"/"+password)
+            .post("https://localhost:7095/user/authentificate/"+email+"/"+password)
             .then(response => {
-                const login=response.data;
-                if(login.id===0){
-                    alert("Incorect email or password");
-                }
-                else {
-                    alert("Login successful Mr."+login.name);
-                }
+                console.log(response.data);
             })
             .catch(error => {
                 console.error(error);
