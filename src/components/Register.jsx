@@ -37,13 +37,14 @@ export class Register extends Component {
             return ;
         }
         axios
-            .post('https://localhost:7095/User/create-user', {
+            .post('https://localhost:7095/User/create-admin', {
                 name: name,
                 email: email,
                 cin: cin,
                 password: password1
             }).then(response => {
                 alert(response.data);
+                window.location = '/login';
             })
             .catch(error => {
                     console.error(error);
@@ -62,7 +63,7 @@ export class Register extends Component {
                     <input id="tab-2" type="radio" name="tab" className="sign-up" checked/>
                     <label htmlFor="tab-2" className="tab">Sign Up</label>
                     <div className="login-form">
-                        <form  className={'form'} onSubmit={this.addUser}>
+                        <form  className={'form'} >
                         <div className="sign-up-htm">
                             <div className="group">
                                 <label htmlFor="user" className="label">Username</label>
@@ -80,13 +81,9 @@ export class Register extends Component {
                                 <label htmlFor="pass" className="label">Password</label>
                                 <input id="pass" type="password" name={'password1'} className="input" datatype="password"/>
                             </div>
-                            <div className="group">
-                                <label htmlFor="pass" className="label">Repeat Password</label>
-                                <input id="pass1" type="password" name={'password2'} className="input" datatype="password"/>
-                            </div>
 
                             <div className="group">
-                                <input type="submit" className="button" value="Sign Up"/>
+                                <input type="submit" className="button text-bg-warning" onSubmit={this.addUser} value="Sign Up"/>
                             </div>
                             <div className="hr"></div>
                             <div className="foot-lnk">

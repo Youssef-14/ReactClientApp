@@ -1,5 +1,7 @@
 import React, {Component} from "react";
 import axios from "axios";
+import dateRender from "../_helpers/DateRender";
+import {getToken} from "../_services/account.services";
 /*import {Stack} from "@mui/material";
 import Pagination from '@mui/material/Pagination';*/
 
@@ -7,15 +9,17 @@ export class VerifDemande extends Component {
 
     filterElement = React.createRef();
     state = {
+        isAuthorized: false,
         data: [],
         data_length: 0,
         showPopup: false,
         showPopup2: false,
         demande: null,
         types: ['all'],
-        status:['all','accepté','refusé','encours','àcorriger'],
+        status:['encours','all','accepté','refusé','àcorriger'],
         filter_type:'all',
-        filter_status:'all',
+        filter_status:'encours',
+        tri :"récente",
         pagination: {
             page: 1,
             limit: 5,
@@ -36,37 +40,48 @@ export class VerifDemande extends Component {
 
     // Lifecycle method
     componentDidMount() {
-        this.getDateLength();
+        // Check if the user is authorized
+
+        this.getDataLength();
     }
 
     handlePaginationNumberChange(e,page) {
         this.setState({pagination:{limit:this.state.pagination.limit,page,pages: this.state.pagination.pages}}, () => {
-            this.getDateLength();
+            this.getDataLength();
         });
     }
 
     handlePaginationChange(e) {
         this.setState({pagination:{limit:e.target.value,page:1,pages: Math.ceil( this.state.data_length/e.target.value)}}, () => {
-            this.getDateLength();
+            this.getDataLength();
         });
     }
 
     handleFilterStatusChange(e) {
         this.setState({ filter_status: e.target.value }, () => {
             this.setState({ pagination: {page: 1,limit: this.state.pagination.limit,pages :this.state.pagination.pages  } })
-            this.getDateLength();
+            this.getDataLength();
         });
     }
     handleFilterTypeChange(e) {
         this.setState({ filter_type: e.target.value }, () => {
             this.setState({ pagination: {page: 1,limit: this.state.pagination.limit,pages :this.state.pagination.pages  } })
-            this.getDateLength();
+            this.getDataLength();
+        });
+    }
+    handleTriChange(e) {
+        this.setState({ tri: e.target.value }, () => {
+            this.getDataLength();
         });
     }
 
-    getDateLength = () => {
+    getDataLength = () => {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`
+        };
         axios
-            .get("https://localhost:7095/get-demandes-filtered-number/"+this.state.filter_type+"/"+this.state.filter_status)
+            .get("https://localhost:7095/Demands/get-demandes-filtered-number/"+this.state.filter_type+"/"+this.state.filter_status, { headers: headers })
             .then(response => {
                 this.setState({ data_length: response.data })
                 this.fetchData();
@@ -77,8 +92,12 @@ export class VerifDemande extends Component {
     }
     //get files
     getfilesnames() {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`
+        };
         axios
-            .get('https://localhost:7095/getallfiles/yo')
+            .get('https://localhost:7095/getallfiles/yo', { headers: headers })
             .then(response => {
                 this.setState({ files: response.data });
             })
@@ -87,8 +106,12 @@ export class VerifDemande extends Component {
             });
     }
     deletefile(file) {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`
+        };
         axios
-            .delete('https://localhost:7095/delete/yo/'+file)
+            .delete('https://localhost:7095/delete/yo/'+file, { headers: headers })
             .then(response => {
                 this.getfilesnames();
             })
@@ -102,7 +125,8 @@ export class VerifDemande extends Component {
             url: "https://localhost:7095/download/yo/"+file,
             responseType: 'blob',
             headers: {
-                'Content-Type': 'application/pdf'
+                'Content-Type': 'application/pdf',
+                'Authorization': `Bearer ${getToken()}`
             }
         })
             .then((response) => {
@@ -122,8 +146,12 @@ export class VerifDemande extends Component {
     fetchData = () => {
         const min = (this.state.pagination.page - 1) * this.state.pagination.limit;
         const max = this.state.pagination.limit;
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`
+        };
         axios
-            .get("https://localhost:7095/get-filtered-demands/"+this.state.filter_type+"/"+this.state.filter_status+"/"+min+"/"+max)
+            .get("https://localhost:7095/Demands/get-filtered-demands/"+this.state.filter_type+"/"+this.state.filter_status+"/"+min+"/"+max+"/"+this.state.tri, { headers: headers })
             .then(response => {
                 const data = response.data;
                 this.setState({ data: data })
@@ -141,8 +169,12 @@ export class VerifDemande extends Component {
 
     updateDemand = (event,value) => {
         event.preventDefault();
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`
+        };
         axios
-            .put('https://localhost:7095/set-demande-to-'+value+"/"+this.state.demande.id)
+            .put('https://localhost:7095/Demands/set-demande-to-'+value+"/"+this.state.demande.id,"", { headers: headers })
             .then(response => {
                 if(this.state.pagination.page > 1){
                     this.setState({ pagination: {page: this.state.pagination.page-1,limit: this.state.pagination.limit,pages :this.state.pagination.pages  } })
@@ -172,17 +204,16 @@ export class VerifDemande extends Component {
     demanadsrender() {
         return (
             <tbody>
-
             {
                 this.state.data.map(demande =>
                     <tr key={demande.id}>
                         <td>{demande.type}</td>
-                        <td>{demande.date}</td>
-                        <td>{demande.comment}</td>
+                        <td>{dateRender(demande.date)}</td>
                         <td>{demande.status}</td>
-                        <td><button className="btn text-white bg-dark" onClick={() =>this.openPopUp(demande)}>option</button></td>
+                        <td><button className="btn text-bg-warning" onClick={() =>this.openPopUp(demande)}>option</button></td>
                     </tr>
-                ) }
+                )
+            }
             </tbody>);
     }
 
@@ -191,7 +222,7 @@ export class VerifDemande extends Component {
         return (
             <div className="popup">
                 <div className="popup-content">
-                    <button className="btn text-white bg-dark justify-content-center" onClick={this.closePopUp}>Close</button>
+                    <i className="close" onClick={this.closePopUp}>Close</i>
                     <form className={'form2'}>
                         <div className="form-group">
                             <label htmlFor="name">Type</label>
@@ -232,10 +263,9 @@ export class VerifDemande extends Component {
                         </tbody>
                     </table>
                         <hr/>
-
-                        <button  className="btn text-white bg-dark m-1" onClick={(event) => this.updateDemand(event,"accepted")}>Accepter</button>
-                        <button  className="btn text-white bg-dark m-1" onClick={(event) => this.updateDemand(event,"refused")}>Refuser</button>
-                        <button  className="btn text-white bg-dark m-1" onClick={(event) => this.updateDemand(event,"be-corrected")}>à corriger</button>
+                        <button  className="btn text-bg-warning m-1" onClick={(event) => this.updateDemand(event,"accepted")}>Accepter</button>
+                        <button  className="btn text-bg-warning m-1" onClick={(event) => this.updateDemand(event,"refused")}>Refuser</button>
+                        <button  className="btn text-bg-warning m-1" onClick={(event) => this.updateDemand(event,"be-corrected")}>à corriger</button>
                     </form>
                 </div>
             </div>
@@ -247,20 +277,24 @@ export class VerifDemande extends Component {
         return (
             <div className={'main'}>
                 <div>
-                    <h1>Filter</h1>
+                    <h3>Filter</h3>
                     Type de demande : <select id={'filter'} ref={this.filterElement} onChange={e => this.handleFilterTypeChange(e)}>
                     {this.state.types.map(option => (
                         <option key={option} value={option}>
                             {option}
                         </option>
                     ))}
-                    </select><br/>
+                    </select><span> </span>
                     Status : <select id={'filter'} ref={this.filterElement} onChange={e => this.handleFilterStatusChange(e)}>
                     {this.state.status.map(option => (
                         <option key={option} value={option}>
                             {option}
                         </option>
                     ))}
+                </select><br/>
+                <select onChange={e => this.handleTriChange(e)}>
+                    <option value="récente">Tri : Plus récents</option>
+                    <option value="ancienne">Tri : Plus anciennes</option>
                 </select>
                 </div>
                 {data ? (<div>
@@ -269,7 +303,6 @@ export class VerifDemande extends Component {
                             <tr>
                                 <th>Type</th>
                                 <th>Date</th>
-                                <th>Comment</th>
                                 <th>Status</th>
                                 <th>options</th>
                             </tr>

@@ -3,6 +3,7 @@ import {NavLink} from "reactstrap";
 import {Link} from "react-router-dom";
 import './styles/register.css';
 import axios from "axios";
+import {saveToken} from "../_services/account.services";
 
 export class Login extends Component {
 
@@ -31,9 +32,16 @@ export class Login extends Component {
         const email = form.elements.email.value;
         const password = form.elements.password.value;
         axios
-            .post("https://localhost:7095/user/authentificate/"+email+"/"+password)
+            .post("https://localhost:7095/user/authentificate", { email, password })
             .then(response => {
-                console.log(response.data);
+                alert(response.data.message);
+
+                // Assuming the login was successful and a JWT was received:
+                const token = response.data.token;
+                // Store the token in local storage
+                saveToken(token);
+                // Redirect to a protected page
+                window.location = '../';
             })
             .catch(error => {
                 console.error(error);
@@ -67,7 +75,7 @@ export class Login extends Component {
                             <label htmlFor="check"><span className="icon"></span> Keep me Signed in</label>
                         </div>
                         <div className="group">
-                            <input type="submit" onClick={this.fetchUser} className="button" value="Sign In"/>
+                            <input type="submit" onClick={this.fetchUser} className="button text-bg-warning" value="Sign In"/>
                         </div>
                         <div className="hr"></div>
                         <div className="foot-lnk">

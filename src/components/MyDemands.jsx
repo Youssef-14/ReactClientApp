@@ -1,5 +1,7 @@
 import React, {Component} from "react";
 import axios from "axios";
+import dateRender from "../_helpers/DateRender";
+import {getToken, getUserID} from "../_services/account.services";
 
 export class MyDemands extends Component {
     state = {
@@ -40,8 +42,12 @@ export class MyDemands extends Component {
         this.setState({file: event.target.files[0]});
     }
     fetchData = () => {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`
+        };
         axios
-            .get('https://localhost:7095/get-all-demandes-by-user/1')
+            .get('https://localhost:7095/Demands/get-all-demandes-by-user/'+getUserID(),{headers})
             .then(response => {
                 const data = response.data;
                 this.setState({ data });
@@ -79,27 +85,25 @@ export class MyDemands extends Component {
                 console.log(response);
             }
         );
-
-
         const mois = new Date().getMonth()+1;
         const month = mois<10 ?"0"+mois:mois;
         const jour = new Date().getDate();
         const day = jour<10 ?"0"+jour:jour;
         const date = new Date().getFullYear()+"-"+month+"-"+ day +"T"+new Date().toLocaleTimeString();
-        console.log(date);
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`
+        };
         axios({
             method: 'post',
             url: 'https://localhost:7095/create-demande',
                 data: {
-                UserId: 1,
+                UserId: getUserID(),
                 type: type,
                 date: date,
                 comment : comment,
             },
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
+            headers: headers,
         }).then(() => {
             this.fetchData();
             this.closePopUp();
@@ -111,8 +115,12 @@ export class MyDemands extends Component {
     }
     //Supprimer un demande
     deleteDemand = (id) =>{
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`
+        };
         axios
-            .delete('https://localhost:7095/delete-demande-by-id/' + id)
+            .delete('https://localhost:7095/Demands/delete-demande-by-id/' + id, {headers})
             .then(() => {
                 this.fetchData();
             })
@@ -127,13 +135,16 @@ export class MyDemands extends Component {
             <div className="popup">
                 <div className="popup-content">
                     <form className={'form'}>
+                        <button className="btn text-white bg-dark justify-content-center" onClick={this.closePopUp}>Close</button>
                         <div className="form-group">
                             <label htmlFor="name">Type de Demande</label>
                             <input type="text" className="form-control" name={'type'} id="name" placeholder="Donner le type de demande" />
                         </div>
                         <div className="form-group">
                             <label htmlFor="email">Commentaires</label>
-                            <input type="text" className="form-control" name={'comment'} id="email" placeholder="Donner un commentaire" />
+                            <textarea className="form-control" name="comment" id="email"
+                                      placeholder="Donner un commentaire"></textarea>
+
                         </div>
                         <div className="form-group">
                             <label htmlFor="File">Ajouter ici les pdf</label>
@@ -141,7 +152,7 @@ export class MyDemands extends Component {
                         </div>
                         <button type="submit" className="btn text-white bg-dark btn-primary" onClick={this.addDemand}>Submit</button>
                     </form>
-                    <button className="btn text-white bg-dark justify-content-center" onClick={this.closePopUp}>Close</button>
+
                 </div>
             </div>
         );
@@ -153,11 +164,10 @@ export class MyDemands extends Component {
                 this.state.data.map(demande =>
                     <tr key={demande.id}>
                         <td>{demande.type}</td>
-                        <td>{demande.date}</td>
-                        <td>{demande.comment}</td>
+                        <td>{dateRender(demande.date)}</td>
                         <td>{demande.status}</td>
-                        <td><button className="btn text-white bg-dark" onClick={() =>this.openPopUp2()}>option</button></td>
-                        <td><button className="btn text-white bg-dark" onClick={() =>this.deleteDemand(demande.id)}>Annuler</button></td>
+                        <td><button className="btn text-white text-bg-warning" onClick={() =>this.openPopUp2()}>option</button></td>
+                        <td><button className="btn text-bg-warning" onClick={() =>this.deleteDemand(demande.id)}>Annuler</button></td>
                     </tr>
                 ) }
             </tbody>);
@@ -182,7 +192,7 @@ export class MyDemands extends Component {
         return (
             <div className={'main'}>
                 <div>
-                    <h1>Filter</h1>
+                    <h2>Filter</h2>
                     Department : <select id={'filter'} ref={this.filterElement} onChange={e => this.setState({filter:e.target.value})}>
                     <option value="all">ALL</option>
                     {this.state.types.map(option => (
@@ -198,7 +208,6 @@ export class MyDemands extends Component {
                             <tr>
                                 <th>Type</th>
                                 <th>Date</th>
-                                <th>Comment</th>
                                 <th>Status</th>
                                 <th>options</th>
                                 <th>Annulation</th>
