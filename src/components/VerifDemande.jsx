@@ -41,7 +41,6 @@ export class VerifDemande extends Component {
     // Lifecycle method
     componentDidMount() {
         // Check if the user is authorized
-
         this.getDataLength();
     }
 
@@ -216,6 +215,37 @@ export class VerifDemande extends Component {
             }
             </tbody>);
     }
+    optionsButtonRender(status){
+        if(status === "encours"){
+            return(
+                <>
+                <button  className="btn text-bg-warning m-1" onClick={(event) => this.updateDemand(event,"accepted")}>Accepter</button>
+                <button  className="btn text-bg-warning m-1" onClick={(event) => this.updateDemand(event,"refused")}>Refuser</button>
+                <button  className="btn text-bg-warning m-1" onClick={(event) => this.updateDemand(event,"be-corrected")}>à corriger</button>
+                </>
+            );
+        }else if(status === "accepté"){
+            return(
+                <>
+                <button  className="btn text-bg-warning m-1" onClick={(event) => this.updateDemand(event,"completed")}>Terminer</button>
+                </>
+            );
+        }else if(status === "refusé"){
+            return(
+                <>
+                <button  className="btn text-bg-warning m-1" onClick={(event) => this.updateDemand(event,"be-corrected")}>Terminer</button>
+                </>
+            );
+        }else if(status === "àcorriger"){
+            return(
+                <>
+                <button  className="btn text-bg-warning m-1" onClick={(event) => this.updateDemand(event,"refused")}>Refuser</button>
+                </>
+            );
+        }
+
+
+    }
 
     // option pop-up render
     optionsrender(){
@@ -234,7 +264,9 @@ export class VerifDemande extends Component {
                         </div>
                         <div className="form-group">
                             <label htmlFor="email">Commentaire</label>
-                            <input type="text" className="form-control" id="email" defaultValue={this.state.demande.comment} placeholder="Enter email" />
+                            <textarea className="form-control" name="comment" defaultValue={this.state.demande.comment} id="email"
+                                      placeholder="Donner un commentaire"></textarea>
+
                         </div>
                         <div className="form-group">
                             <label htmlFor="email">status</label>
@@ -263,9 +295,7 @@ export class VerifDemande extends Component {
                         </tbody>
                     </table>
                         <hr/>
-                        <button  className="btn text-bg-warning m-1" onClick={(event) => this.updateDemand(event,"accepted")}>Accepter</button>
-                        <button  className="btn text-bg-warning m-1" onClick={(event) => this.updateDemand(event,"refused")}>Refuser</button>
-                        <button  className="btn text-bg-warning m-1" onClick={(event) => this.updateDemand(event,"be-corrected")}>à corriger</button>
+                        {this.optionsButtonRender(this.state.demande.status)}
                     </form>
                 </div>
             </div>
